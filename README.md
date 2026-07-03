@@ -1,6 +1,6 @@
 # AART
 
-AART is an agent skill and CLI for publishing static HTML artifacts to unguessable Cloudflare R2 URLs so humans can review them from any device.
+AART is an agent skill and CLI for publishing static HTML artifacts to unguessable Cloudflare R2 URLs so humans can review them from any device. One configured repository can publish many independent artifact directories; every publish creates its own unguessable share token and URL.
 
 The MVP uses a public R2 bucket with a custom domain. It does not use a Worker, login wall, or artifact index. URLs are capability links: anyone with the URL can view the artifact, but the token is generated with cryptographic randomness and should not be guessable.
 
@@ -32,7 +32,7 @@ Then configure AART in your project:
 npx @bltgv/aart setup --bucket aart --base-url https://aart.example.com
 ```
 
-This writes `.aart/config.json`. It should be committed. Do not put secrets in that file.
+This writes `.aart/config.json`. It should be committed. This file is project publishing configuration only, not artifact state; publishing one artifact or many artifacts does not update it. Do not put secrets in that file.
 
 For CI or headless environments, use Cloudflare environment variables:
 
@@ -66,6 +66,8 @@ npx @bltgv/aart validate ./artifact
 npx @bltgv/aart publish ./artifact
 ```
 
+You can repeat this for any number of task-specific artifact directories from the same repository. Each publish is independent and returns a distinct capability URL; AART does not keep a repo-level artifact registry or public index.
+
 AART uploads to:
 
 ```text
@@ -87,6 +89,8 @@ npx @bltgv/aart revoke https://aart.example.com/shares/{token}/index.html
 ```
 
 Revocation deletes the objects listed in `manifest.json`. It does not prevent access to already downloaded copies.
+
+Revocation targets one share token at a time. Other artifacts published from the same repository and `.aart/config.json` are unaffected.
 
 ## Cloudflare Notes
 

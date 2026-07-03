@@ -1,15 +1,31 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { internals } from "../lib/cli.mjs";
+
+const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 test("createToken creates unguessable URL-safe tokens", () => {
   const token = internals.createToken(24);
   assert.match(token, /^[A-Za-z0-9_-]+$/);
   assert.ok(token.length >= 32);
+});
+
+test("CLI help describes the multi-artifact project model", () => {
+  const result = spawnSync(process.execPath, ["bin/aart.mjs", "--help"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /many independent artifact directories/);
+  assert.match(result.stdout, /Each publish\s+creates its own unguessable share token and URL/);
+  assert.match(result.stdout, /\.aart\/config\.json\s+stores project publishing configuration only, not artifact state/);
 });
 
 test("injectNoindex inserts robots meta into HTML head", () => {

@@ -1,4 +1,4 @@
 interface:
   display_name: "AART"
-  short_description: "Create and publish unguessable review links for static HTML artifacts."
-  default_prompt: "Use AART to create a reviewable HTML artifact and publish it when ready."
+  short_description: "Create and publish independent unguessable review links for static HTML artifacts."
+  default_prompt: "Use AART to create a reviewable HTML artifact and publish it when ready; each publish gets its own share URL."
