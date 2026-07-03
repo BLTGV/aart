@@ -20,6 +20,8 @@ npx skills add BLTGV/aart --skill aart --agent codex -g -y
 
 ## Configure Publishing
 
+The AART CLI is not published to npm yet. Run it directly from GitHub with `npx github:BLTGV/aart`, or install it globally from GitHub with `npm install -g github:BLTGV/aart` and use `aart`.
+
 Authenticate Wrangler first:
 
 ```bash
@@ -29,7 +31,7 @@ npx wrangler login
 Then configure AART in your project:
 
 ```bash
-npx @bltgv/aart setup --bucket aart --base-url https://aart.example.com
+npx github:BLTGV/aart setup --bucket aart --base-url https://aart.example.com
 ```
 
 This writes `.aart/config.json`. It should be committed. This file is project publishing configuration only, not artifact state; publishing one artifact or many artifacts does not update it. Do not put secrets in that file.
@@ -44,7 +46,7 @@ CLOUDFLARE_API_TOKEN=...
 ## Check Setup
 
 ```bash
-npx @bltgv/aart doctor
+npx github:BLTGV/aart doctor
 ```
 
 `doctor` checks Wrangler, authentication, config, the R2 bucket, and public read access by uploading and fetching a temporary health object.
@@ -62,11 +64,19 @@ artifact/
 Validate and publish:
 
 ```bash
-npx @bltgv/aart validate ./artifact
-npx @bltgv/aart publish ./artifact
+npx github:BLTGV/aart validate ./artifact
+npx github:BLTGV/aart publish ./artifact
 ```
 
 You can repeat this for any number of task-specific artifact directories from the same repository. Each publish is independent and returns a distinct capability URL; AART does not keep a repo-level artifact registry or public index.
+
+By default, AART only prints the published URL. To keep a project-local history of published share links, use `--save`:
+
+```bash
+npx github:BLTGV/aart publish ./artifact --save
+```
+
+This appends a record to `.aart/shares.json` with the URL, token, artifact directory, publish time, bucket, prefix, and manifest key. `.aart/config.json` remains publishing configuration only. Saved URLs are still capability links, so only commit `.aart/shares.json` when everyone with repository access should be able to open those artifacts.
 
 AART uploads to:
 
@@ -85,7 +95,7 @@ https://aart.example.com/shares/{unguessable-token}/index.html
 ## Revoke
 
 ```bash
-npx @bltgv/aart revoke https://aart.example.com/shares/{token}/index.html
+npx github:BLTGV/aart revoke https://aart.example.com/shares/{token}/index.html
 ```
 
 Revocation deletes the objects listed in `manifest.json`. It does not prevent access to already downloaded copies.

@@ -26,6 +26,9 @@ test("CLI help describes the multi-artifact project model", () => {
   assert.match(result.stdout, /many independent artifact directories/);
   assert.match(result.stdout, /Each publish\s+creates its own unguessable share token and URL/);
   assert.match(result.stdout, /\.aart\/config\.json\s+stores project publishing configuration only, not artifact state/);
+  assert.match(result.stdout, /aart publish <artifact-dir> \[--json\] \[--token <token>\] \[--save\]/);
+  assert.match(result.stdout, /npx github:BLTGV\/aart setup --bucket aart --base-url https:\/\/aart\.example\.com/);
+  assert.doesNotMatch(result.stdout, /npx @bltgv\/aart/);
 });
 
 test("injectNoindex inserts robots meta into HTML head", () => {
@@ -48,6 +51,55 @@ test("normalizeConfig supplies defaults", () => {
   assert.equal(config.prefix, "shares");
   assert.equal(config.tokenBytes, 24);
   assert.equal(config.cache.html, "public, max-age=60, must-revalidate");
+});
+
+test("saveShareRecord appends project-local share history without changing config", () => {
+  const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "aart-project-"));
+  try {
+    const configDir = path.join(projectDir, ".aart");
+    const configPath = path.join(configDir, "config.json");
+    const artifactDir = path.join(projectDir, "artifacts", "one");
+    fs.mkdirSync(artifactDir, { recursive: true });
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(configPath, "{}\n");
+
+    const savedTo = internals.saveShareRecord({
+      configPath,
+      artifactDir,
+      record: {
+        url: "https://aart.example.com/shares/token-one/index.html",
+        token: "token-one",
+        publishedAt: "2026-07-03T00:00:00.000Z",
+        bucket: "aart",
+        prefix: "shares/token-one",
+        manifestKey: "shares/token-one/manifest.json"
+      }
+    });
+
+    internals.saveShareRecord({
+      configPath,
+      artifactDir,
+      record: {
+        url: "https://aart.example.com/shares/token-two/index.html",
+        token: "token-two",
+        publishedAt: "2026-07-03T00:01:00.000Z",
+        bucket: "aart",
+        prefix: "shares/token-two",
+        manifestKey: "shares/token-two/manifest.json"
+      }
+    });
+
+    const history = JSON.parse(fs.readFileSync(savedTo, "utf8"));
+    assert.equal(savedTo, path.join(configDir, "shares.json"));
+    assert.equal(fs.readFileSync(configPath, "utf8"), "{}\n");
+    assert.equal(history.version, 1);
+    assert.deepEqual(history.shares.map((share) => share.token), ["token-one", "token-two"]);
+    assert.equal(history.shares[0].artifactDir, "artifacts/one");
+    assert.equal(history.shares[0].url, "https://aart.example.com/shares/token-one/index.html");
+    assert.equal(history.shares[0].manifestKey, "shares/token-one/manifest.json");
+  } finally {
+    fs.rmSync(projectDir, { recursive: true, force: true });
+  }
 });
 
 test("tokenFromTarget extracts token from share URL", () => {

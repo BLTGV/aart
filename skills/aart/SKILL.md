@@ -9,6 +9,8 @@ AART publishes static agent artifacts as unguessable capability links. One confi
 
 Anyone with a published link can view that artifact; the link is not authentication. Do not publish secrets, credentials, private data, or internal-only content unless the user explicitly confirms that capability-link sharing is acceptable.
 
+The AART CLI is not published to npm yet. Run it with `npx github:BLTGV/aart ...`, or with `aart ...` after installing globally from GitHub.
+
 ## Workflow
 
 1. Create or edit a local artifact directory containing `index.html` at its root and any assets under subdirectories such as `assets/`. Use a separate directory for each independent artifact.
@@ -17,19 +19,19 @@ Anyone with a published link can view that artifact; the link is not authenticat
 4. Validate the artifact:
 
 ```bash
-npx @bltgv/aart validate <artifact-dir>
+npx github:BLTGV/aart validate <artifact-dir>
 ```
 
 5. If publishing is requested and the project has not been configured, run:
 
 ```bash
-npx @bltgv/aart doctor
+npx github:BLTGV/aart doctor
 ```
 
 If doctor reports missing configuration, tell the user to run setup with their bucket and public base URL:
 
 ```bash
-npx @bltgv/aart setup --bucket <bucket> --base-url <https://public-r2-domain>
+npx github:BLTGV/aart setup --bucket <bucket> --base-url <https://public-r2-domain>
 ```
 
 Commit `.aart/config.json`; it stores only reusable project publishing configuration such as bucket, base URL, prefix, cache, and token size. It is not a manifest, registry, or pointer to one artifact.
@@ -37,8 +39,16 @@ Commit `.aart/config.json`; it stores only reusable project publishing configura
 6. Publish:
 
 ```bash
-npx @bltgv/aart publish <artifact-dir>
+npx github:BLTGV/aart publish <artifact-dir>
 ```
+
+If the user asks to keep the link in the project for later reference, publish with `--save`:
+
+```bash
+npx github:BLTGV/aart publish <artifact-dir> --save
+```
+
+This appends the share URL and metadata to `.aart/shares.json`. Do not use `.aart/config.json` for artifact history. Saved URLs are capability links; only save or commit them when the project audience should be able to open the artifacts.
 
 7. Return the published URL and state that it is an unguessable share link, not an authenticated private URL.
 
@@ -67,7 +77,7 @@ The CLI generates the token with cryptographic randomness. Do not replace it wit
 To revoke a published artifact, run:
 
 ```bash
-npx @bltgv/aart revoke <share-url-or-token>
+npx github:BLTGV/aart revoke <share-url-or-token>
 ```
 
 Revocation deletes the objects listed in the published manifest. It does not prevent access to copies already downloaded or forwarded.
