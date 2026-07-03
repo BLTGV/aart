@@ -1,0 +1,40 @@
+{
+  "name": "@bltgv/aart",
+  "version": "0.1.0",
+  "description": "Agent artifact publishing skill and CLI for reviewable public HTML on Cloudflare R2.",
+  "type": "module",
+  "bin": {
+    "aart": "./bin/aart.mjs"
+  },
+  "scripts": {
+    "lint": "node --check bin/aart.mjs && node --check lib/cli.mjs",
+    "test": "node --test"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "agent-skills",
+    "codex",
+    "cloudflare",
+    "r2",
+    "wrangler",
+    "artifacts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BLTGV/aart.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BLTGV/aart/issues"
+  },
+  "homepage": "https://github.com/BLTGV/aart#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.18"
+  }
+}
