@@ -36,6 +36,14 @@ npx github:BLTGV/aart setup --bucket aart --base-url https://aart.example.com
 
 This writes `.aart/config.json`. It should be committed. This file is project publishing configuration only, not artifact state; publishing one artifact or many artifacts does not update it. Do not put secrets in that file.
 
+To set publishing defaults for your user account, add `--user`:
+
+```bash
+npx github:BLTGV/aart setup --user --bucket aart --base-url https://aart.example.com
+```
+
+This writes `~/.config/aart/config.json` by default, or `$XDG_CONFIG_HOME/aart/config.json` when `XDG_CONFIG_HOME` is set. User config applies when a project has no `.aart/config.json`. If both exist, AART merges them with project config overriding user config field by field. Do not commit user config.
+
 For CI or headless environments, use Cloudflare environment variables:
 
 ```bash
@@ -81,6 +89,7 @@ This appends a record to `.aart/shares.json` with the URL, token, artifact direc
 AART uploads to:
 
 ```text
+shares/{unguessable-token}/
 shares/{unguessable-token}/index.html
 shares/{unguessable-token}/assets/...
 shares/{unguessable-token}/manifest.json
@@ -89,13 +98,13 @@ shares/{unguessable-token}/manifest.json
 The command returns a URL like:
 
 ```text
-https://aart.example.com/shares/{unguessable-token}/index.html
+https://aart.example.com/shares/{unguessable-token}/
 ```
 
 ## Revoke
 
 ```bash
-npx github:BLTGV/aart revoke https://aart.example.com/shares/{token}/index.html
+npx github:BLTGV/aart revoke https://aart.example.com/shares/{token}/
 ```
 
 Revocation deletes the objects listed in `manifest.json`. It does not prevent access to already downloaded copies.
@@ -106,6 +115,7 @@ Revocation targets one share token at a time. Other artifacts published from the
 
 - Use a custom R2 domain for normal use.
 - Keep `r2.dev` for testing only.
+- AART passes `--remote` to Wrangler `r2 object get`, `put`, and `delete` so artifact object operations target the real R2 bucket.
 - AART uploads `robots.txt` with `Disallow: /`.
 - AART injects `<meta name="robots" content="noindex,nofollow">` into uploaded HTML if missing.
 - Unguessable URLs are easy sharing, not authentication.

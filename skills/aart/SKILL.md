@@ -34,7 +34,15 @@ If doctor reports missing configuration, tell the user to run setup with their b
 npx github:BLTGV/aart setup --bucket <bucket> --base-url <https://public-r2-domain>
 ```
 
-Commit `.aart/config.json`; it stores only reusable project publishing configuration such as bucket, base URL, prefix, cache, and token size. It is not a manifest, registry, or pointer to one artifact.
+If the user wants one publishing default across projects, use user-level setup:
+
+```bash
+npx github:BLTGV/aart setup --user --bucket <bucket> --base-url <https://public-r2-domain>
+```
+
+Project config lives at `.aart/config.json`; commit it when the project needs shared publishing settings. User config lives at `~/.config/aart/config.json`, or `$XDG_CONFIG_HOME/aart/config.json` when `XDG_CONFIG_HOME` is set; do not commit it. If both exist, AART merges them with project config overriding user config field by field. Both config files store only reusable publishing configuration such as bucket, base URL, prefix, cache, and token size. They are not manifests, registries, or pointers to one artifact.
+
+AART passes `--remote` to Wrangler `r2 object get`, `put`, and `delete` so artifact object operations target the real R2 bucket.
 
 6. Publish:
 
@@ -65,12 +73,13 @@ This appends the share URL and metadata to `.aart/shares.json`. Do not use `.aar
 Each publish writes a separate tokenized prefix:
 
 ```text
+shares/{unguessable-token}/
 shares/{unguessable-token}/index.html
 shares/{unguessable-token}/assets/...
 shares/{unguessable-token}/manifest.json
 ```
 
-The CLI generates the token with cryptographic randomness. Do not replace it with timestamps, slugs, issue numbers, branch names, repo names, or other guessable values. Do not assume the repository has only one artifact; publish each artifact directory separately and keep the returned URL for that specific share.
+The returned share URL ends at `shares/{unguessable-token}/`; the reviewer does not need to type `index.html`. The CLI generates the token with cryptographic randomness. Do not replace it with timestamps, slugs, issue numbers, branch names, repo names, or other guessable values. Do not assume the repository has only one artifact; publish each artifact directory separately and keep the returned URL for that specific share.
 
 ## Revocation
 
