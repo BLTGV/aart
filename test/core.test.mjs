@@ -48,6 +48,7 @@ test("CLI help describes the multi-artifact project model", () => {
   assert.match(result.stdout, /Use setup --user to write user defaults/);
   assert.match(result.stdout, /aart setup --bucket <bucket> --base-url <url> \[--domain <domain>\] \[--user\]/);
   assert.match(result.stdout, /aart publish <artifact-dir> \[--json\] \[--token <token>\] \[--save\]/);
+  assert.match(result.stdout, /aart update <share-url-or-token> <artifact-dir> \[--json\] \[--save\]/);
   assert.match(result.stdout, /npx github:BLTGV\/aart setup --bucket aart --base-url https:\/\/aart\.example\.com/);
   assert.doesNotMatch(result.stdout, /npx @bltgv\/aart/);
 });
@@ -62,6 +63,18 @@ test("injectNoindex inserts robots meta into HTML head", () => {
 test("injectNoindex preserves existing robots meta", () => {
   const html = '<html><head><meta name="robots" content="noindex"></head></html>';
   assert.equal(internals.injectNoindex(html), html);
+});
+
+test("injectBaseHref inserts escaped base href into HTML head", () => {
+  const html = "<!doctype html><html><head><title>x</title></head><body></body></html>";
+  const result = internals.injectBaseHref(html, 'https://aart.example.com/shares/a&"b/');
+  assert.match(result, /<base href="https:\/\/aart\.example\.com\/shares\/a&amp;&quot;b\/">/);
+  assert.match(result, /<head>\s+<base/);
+});
+
+test("injectBaseHref preserves existing base href", () => {
+  const html = '<html><head><base href="https://example.com/"></head></html>';
+  assert.equal(internals.injectBaseHref(html, "https://aart.example.com/shares/token/"), html);
 });
 
 test("normalizeConfig supplies defaults", () => {
@@ -93,11 +106,48 @@ test("objectKeysForFile aliases root index.html to the token prefix", () => {
 
   assert.deepEqual(internals.objectKeysForFile(config, "abc123XYZ_abc123XYZ_abc123XYZ", "index.html"), [
     "shares/abc123XYZ_abc123XYZ_abc123XYZ/index.html",
-    "shares/abc123XYZ_abc123XYZ_abc123XYZ/"
+    "shares/abc123XYZ_abc123XYZ_abc123XYZ/",
+    "shares/abc123XYZ_abc123XYZ_abc123XYZ"
   ]);
   assert.deepEqual(internals.objectKeysForFile(config, "abc123XYZ_abc123XYZ_abc123XYZ", "assets/style.css"), [
     "shares/abc123XYZ_abc123XYZ_abc123XYZ/assets/style.css"
   ]);
+});
+
+test("objectUploadsForFile adds base href to the no-slash index alias", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aart-upload-"));
+  const tempFiles = [];
+  try {
+    const indexPath = path.join(dir, "index.html");
+    fs.writeFileSync(indexPath, '<html><head></head><body><link rel="stylesheet" href="./assets/style.css"></body></html>');
+    const config = internals.normalizeConfig({
+      bucket: "aart",
+      publicBaseUrl: "https://aart.example.com",
+      prefix: "shares"
+    });
+
+    const uploads = internals.objectUploadsForFile({
+      config,
+      token: "abc123XYZ_abc123XYZ_abc123XYZ",
+      relativePath: "index.html",
+      filePath: indexPath,
+      uploadPath: indexPath,
+      tempFiles
+    });
+    const noSlashUpload = uploads.find((upload) => upload.key === "shares/abc123XYZ_abc123XYZ_abc123XYZ");
+
+    assert.equal(uploads.length, 3);
+    assert.ok(noSlashUpload);
+    assert.notEqual(noSlashUpload.filePath, indexPath);
+    const html = fs.readFileSync(noSlashUpload.filePath, "utf8");
+    assert.match(html, /<base href="https:\/\/aart\.example\.com\/shares\/abc123XYZ_abc123XYZ_abc123XYZ\/">/);
+    assert.match(html, /<meta name="robots" content="noindex,nofollow">/);
+  } finally {
+    for (const filePath of tempFiles) {
+      fs.rmSync(filePath, { force: true });
+    }
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("r2ObjectArgs uses remote storage for Wrangler object commands", () => {
@@ -109,6 +159,28 @@ test("r2ObjectArgs uses remote storage for Wrangler object commands", () => {
     "--remote",
     "--file",
     "index.html"
+  ]);
+});
+
+test("staleObjectKeys returns previous manifest files absent from next manifest", () => {
+  const previousManifest = {
+    files: [
+      "shares/token/index.html",
+      "shares/token/",
+      "shares/token",
+      "shares/token/assets/old.css",
+      "shares/token/assets/old.css",
+      "shares/token/manifest.json"
+    ]
+  };
+
+  assert.deepEqual(internals.staleObjectKeys(previousManifest, [
+    "shares/token/index.html",
+    "shares/token/",
+    "shares/token",
+    "shares/token/assets/new.css"
+  ], "shares/token/manifest.json"), [
+    "shares/token/assets/old.css"
   ]);
 });
 
@@ -245,6 +317,11 @@ test("tokenFromTarget extracts token from share URL", () => {
 
 test("tokenFromTarget extracts token from no-index share URL", () => {
   const token = internals.tokenFromTarget("https://aart.example.com/shares/abc123XYZ_abc123XYZ_abc123XYZ/", "shares");
+  assert.equal(token, "abc123XYZ_abc123XYZ_abc123XYZ");
+});
+
+test("tokenFromTarget extracts token from trailing-slash-stripped share URL", () => {
+  const token = internals.tokenFromTarget("https://aart.example.com/shares/abc123XYZ_abc123XYZ_abc123XYZ", "shares");
   assert.equal(token, "abc123XYZ_abc123XYZ_abc123XYZ");
 });
 

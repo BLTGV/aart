@@ -50,10 +50,19 @@ AART passes `--remote` to Wrangler `r2 object get`, `put`, and `delete` so artif
 npx github:BLTGV/aart publish <artifact-dir>
 ```
 
-If the user asks to keep the link in the project for later reference, publish with `--save`:
+If updating an existing AART share, do not publish a new artifact. Reuse the same URL with:
+
+```bash
+npx github:BLTGV/aart update <share-url-or-token> <artifact-dir>
+```
+
+`update` keeps the same share URL, writes a new manifest, and deletes objects from the previous manifest that are no longer present.
+
+If the user asks to keep the link in the project for later reference, add `--save` to `publish` or `update`:
 
 ```bash
 npx github:BLTGV/aart publish <artifact-dir> --save
+npx github:BLTGV/aart update <share-url-or-token> <artifact-dir> --save
 ```
 
 This appends the share URL and metadata to `.aart/shares.json`. Do not use `.aart/config.json` for artifact history. Saved URLs are capability links; only save or commit them when the project audience should be able to open the artifacts.
@@ -73,13 +82,14 @@ This appends the share URL and metadata to `.aart/shares.json`. Do not use `.aar
 Each publish writes a separate tokenized prefix:
 
 ```text
+shares/{unguessable-token}
 shares/{unguessable-token}/
 shares/{unguessable-token}/index.html
 shares/{unguessable-token}/assets/...
 shares/{unguessable-token}/manifest.json
 ```
 
-The returned share URL ends at `shares/{unguessable-token}/`; the reviewer does not need to type `index.html`. The CLI generates the token with cryptographic randomness. Do not replace it with timestamps, slugs, issue numbers, branch names, repo names, or other guessable values. Do not assume the repository has only one artifact; publish each artifact directory separately and keep the returned URL for that specific share.
+The returned share URL ends at `shares/{unguessable-token}/`; the reviewer does not need to type `index.html`. AART also publishes `shares/{unguessable-token}` so clients that strip the trailing slash still render the artifact. The CLI generates the token with cryptographic randomness. Do not replace it with timestamps, slugs, issue numbers, branch names, repo names, or other guessable values. Do not assume the repository has only one artifact; publish each artifact directory separately and keep the returned URL for that specific share. When revising an existing artifact, use `update` instead of `publish` so the review URL stays stable.
 
 ## Revocation
 

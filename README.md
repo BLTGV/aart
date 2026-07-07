@@ -89,6 +89,7 @@ This appends a record to `.aart/shares.json` with the URL, token, artifact direc
 AART uploads to:
 
 ```text
+shares/{unguessable-token}
 shares/{unguessable-token}/
 shares/{unguessable-token}/index.html
 shares/{unguessable-token}/assets/...
@@ -100,6 +101,20 @@ The command returns a URL like:
 ```text
 https://aart.example.com/shares/{unguessable-token}/
 ```
+
+The trailing slash is canonical because it keeps relative asset URLs simple. AART also publishes a compatibility object at `shares/{unguessable-token}` so clients that strip the trailing slash, such as chat apps, still render the artifact instead of getting a 404.
+
+## Update In Place
+
+To replace an existing share without changing its URL, update it with the previous share URL or token:
+
+```bash
+npx github:BLTGV/aart update https://aart.example.com/shares/{token}/ ./artifact
+```
+
+`update` reuses the existing token, uploads the new artifact to the same prefix, writes a new manifest, and deletes objects from the previous manifest that are no longer present. This is the preferred command when iterating on a review link.
+
+Add `--save` to append the update to `.aart/shares.json`.
 
 ## Revoke
 
